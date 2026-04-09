@@ -1,0 +1,11 @@
+SkyGuard Defense Systems - Commercial License Agreement
+
+The open-source version of otis-core is distributed under the GNU GPLv3 license. If your organization intends to use, integrate, or embed otis-core into proprietary, closed-source systems (including commercial UAV platforms, military integrations, or proprietary defense networks), you must acquire a Commercial License.
+
+The Enterprise Commercial License grants you:
+1. The right to keep your integrated software and hardware stacks closed-source.
+2. Access to Enterprise modules (swarm tracking, encrypted MAVLink handshakes, proprietary sensor fusion).
+3. Direct engineering support from SkyGuard Defense Systems.
+
+To obtain a license, contact: procurement@skyguarddefense.com
+Copyright (c) 2026 Colby Fitch / SkyGuard Defense Systems.
