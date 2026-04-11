@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://yourwebsite.com/path/to/skyguard-logo.png" alt="SkyGuard Defense Systems" width="200"/>
+  <img src="https://skyguarddefense.com/skyguard_logo.png" alt="SkyGuard Defense Systems" width="200"/>
 </p>
 
 # otis-core
