@@ -23,3 +23,52 @@ Rather than improving optical anomaly detection, O.T.I.S. exits that arms race b
 ---
 
 ## Repository Structure
+otis-core/
+├── README.md
+├── MATH.md
+├── ARCHITECTURE.md
+├── CMakeLists.txt
+├── .github/workflows/build.yml
+├── src/
+│ ├── kinematics_math.cpp
+│ └── bypasses/ffmpeg_bypass_layer.cpp
+├── include/otis_core/
+│ ├── kcm_math.hpp
+│ └── otis_core.hpp
+├── examples/
+│ ├── mock_sensor_feed.cpp
+│ └── mock_telemetry_feed.cpp
+├── python-validation/
+│ ├── kcm_validate.py
+│ ├── stereo_disparity_poc.py
+│ ├── volume_anomaly_detector.py
+│ └── test_images/
+└── web-demo/
+├── kcm_visualizer.html
+├── shaders/
+│ ├── kcm_fragment.glsl
+│ └── volume_penalty.glsl
+└── js/kcm_engine.js
+
+## Quick Start
+
+```bash
+git clone https://github.com/SkyGuardDefense/otis-core.git
+cd otis-core
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/examples/mock_sensor_feed
+```
+
+---
+
+## Live Demo
+
+> WebGL KCM Visualizer — `web-demo/kcm_visualizer.html` — runs in any browser, mobile GPU accelerated.
+
+---
+
+## License
+
+Dual licensed: GPL-3.0 and SkyGuard Commercial License.
+*© 2026 SkyGuard Defense Systems.*
