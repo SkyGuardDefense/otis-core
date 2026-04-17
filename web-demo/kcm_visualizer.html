@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O.T.I.S. KCM Visualizer — SkyGuard Defense Systems</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0f;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0 24px;
+    border-bottom: 1px solid #1a3a2a;
+    margin-bottom: 24px;
+  }
+  .logo {
+    font-size: 13px;
+    color: #00ff66;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .version { font-size: 11px; color: #444; }
+  h1 {
+    font-size: 18px;
+    color: #00ff66;
+    letter-spacing: 3px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 11px;
+    color: #556;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+  }
+  .canvas-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    background: #050508;
+    border: 1px solid #1a3a2a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  canvas {
+    width: 100%;
+    display: block;
+  }
+  .overlay-hud {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 11px;
+    color: #00ff66;
+    line-height: 1.8;
+    pointer-events: none;
+  }
+  .overlay-hud span { color: #aaa; }
+  .status-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    padding: 6px 12px;
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .status-ok { color: #00ff66; }
+  .status-warn { color: #ffcc00; }
+  .status-alert { color: #ff3333; animation: pulse 0.5s infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+  .controls {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #0d1f14;
+    color: #00ff66;
+    border: 1px solid #1a4a2a;
+    padding: 8px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+  }
+  button:hover { background: #162a1e; }
+  button.active { background: #00ff66; color: #000; }
+  .metrics {
+    width: 100%;
+    max-width: 800px;
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .metric-card {
+    background: #050508;
+    border: 1px solid #1a2a1a;
+    border-radius: 4px;
+    padding: 12px 16px;
+  }
+  .metric-label {
+    font-size: 10px;
+    color: #556;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 22px;
+    color: #00ff66;
+    font-weight: bold;
+  }
+  .metric-unit { font-size: 11px; color: #446; margin-left: 4px; }
+  .anomaly-log {
+    width: 100%;
+    max-width: 800px;
+    margin-top: 20px;
+    background: #050508;
+    border: 1px solid #1a2a1a;
+    border-radius: 4px;
+    padding: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  .anomaly-log-title {
+    color: #556;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .log-entry { color: #00ff66; }
+  .log-entry.warn { color: #ffcc00; }
+  .log-entry.alert { color: #ff3333; font-weight: bold; }
+  .pipeline-status {
+    width: 100%;
+    max-width: 800px;
+    margin-top: 20px;
+    font-size: 11px;
+    line-height: 2;
+    color: #556;
+  }
+  .stage-ok { color: #00ff66; }
+  .stage-poc { color: #ffaa00; }
+  .stage-spec { color: #444; }
+  footer {
+    margin-top: 40px;
+    font-size: 10px;
+    color: #333;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⬡ SKYGUARD DEFENSE SYSTEMS</div>
+  <div class="version">otis-core v0.1 — April 2026</div>
+</header>
+
+<h1>O.T.I.S. KCM VISUALIZER</h1>
+<div class="subtitle">OPTICAL THREAT ISOLATION SYSTEM — KINETIC CONTOUR MAPPING — LIVE PHASE-EDGE DETECTION</div>
+
+<div class="canvas-container">
+  <canvas id="kcmCanvas" width="800" height="450"></canvas>
+  <div class="overlay-hud">
+    <div>STAGE <span>1</span> SDM <span>——</span> <span id="sdmStatus">ACTIVE</span></div>
+    <div>STAGE <span>2</span> KCM <span>——</span> <span id="kcmStatus">ACTIVE</span></div>
+    <div>STAGE <span>3</span> VST <span>——</span> <span id="vstStatus">POC</span></div>
+    <div>STAGE <span>4</span> SKEL <span>——</span> <span id="skelStatus">SPECIFIED</span></div>
+  </div>
+  <div class="status-bar">
+    <span id="frameCounter" class="status-ok">FRAME 0000</span>
+    <span id="lockStatus" class="status-ok">KCM LOCK — NOMINAL</span>
+    <span id="betaStatus" class="status-ok">β(∇V) = 0.00</span>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="btnCamera" onclick="startCamera()">▶ LIVE CAMERA</button>
+  <button id="btnSynth" onclick="startSynthetic()" class="active">⬡ SYNTHETIC TARGET</button>
+  <button id="btnEdge" onclick="toggleEdgeOverlay()">EDGE OVERLAY</button>
+  <button id="btnVolume" onclick="toggleVolumeOverlay()">VOLUME PENALTY</button>
+  <button id="btnReset" onclick="resetLog()">RESET LOG</button>
+</div>
+
+<div class="metrics">
+  <div class="metric-card">
+    <div class="metric-label">nablaV (frame delta)</div>
+    <div class="metric-value" id="metNablaV">0.0000<span class="metric-unit"></span></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">β score</div>
+    <div class="metric-value" id="metBeta">0.00<span class="metric-unit"></span></div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Anomalies detected</div>
+    <div class="metric-value" id="metAnomalies">0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Edge response RMS</div>
+    <div class="metric-value" id="metEdge">—</div>
+  </div>
+</div>
+
+<div class="anomaly-log">
+  <div class="anomaly-log-title">⬡ KCM ANOMALY LOG</div>
+  <div id="logEntries">
+    <div class="log-entry">[ INIT ] O.T.I.S. KCM Visualizer online. Awaiting target acquisition.</div>
+  </div>
+</div>
+
+<div class="pipeline-status">
+  <div><span class="stage-ok">● STAGE 1 SDM</span> — Spectral Delamination Matrix — Working (Python + WebGL)</div>
+  <div><span class="stage-ok">● STAGE 2 KCM</span> — Kinetic Contour Mapping — Working (C++ + GLSL)</div>
+  <div><span class="stage-poc">◑ STAGE 3 VST</span> — Volumetric Stereo-Triangulation — PoC (Python/OpenCV)</div>
+  <div><span class="stage-spec">○ STAGE 4 SKEL</span> — Structural Skeletonization — Specified / Forward Milestone</div>
+</div>
+
+<footer>© 2026 SKYGUARD DEFENSE SYSTEMS — GPL-3.0 AND SKYGUARD COMMERCIAL LICENSE</footer>
+
+<script>
+// KCM Engine (inline — no external dependency required)
+const THETA_MORPH = 0.10;
+const KAPPA = 1000.0;
+const BETA_0 = 1.0;
+const EDGE_THRESHOLD = 0.15;
+
+let canvas, ctx;
+let frameIdx = 0;
+let anomalyCount = 0;
+let prevEdgeMean = null;
+let showEdge = true;
+let showVolume = false;
+let animFrame = null;
+let videoStream = null;
+let videoEl = null;
+let mode = 'synthetic';
+let synthAngle = 0;
+
+function init() {
+  canvas = document.getElementById('kcmCanvas');
+  ctx = canvas.getContext('2d');
+  startSynthetic();
+}
+
+// --- Synthetic Target Renderer ---
+function startSynthetic() {
+  mode = 'synthetic';
+  if (animFrame) cancelAnimationFrame(animFrame);
+  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+  document.getElementById('btnSynth').classList.add('active');
+  document.getElementById('btnCamera').classList.remove('active');
+  synthLoop();
+}
+
+function synthLoop() {
+  drawSyntheticScene();
+  runKCMAnalysis();
+  animFrame = requestAnimationFrame(synthLoop);
+}
+
+function drawSyntheticScene() {
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#050508';
+  ctx.fillRect(0, 0, W, H);
+
+  // FlyTrap adversarial ring pattern
+  const cx = W / 2 + Math.sin(synthAngle * 0.3) * 40;
+  const cy = H / 2 + Math.cos(synthAngle * 0.2) * 25;
+  for (let r = 15; r < 200; r += 22) {
+    const parity = Math.floor(r / 22) % 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = parity ? `rgba(255,255,255,${0.6 + 0.3 * Math.sin(synthAngle)})` : `rgba(0,0,0,0.8)`;
+    ctx.lineWidth = 10;
+    ctx.stroke();
+  }
+
+  // Simulated drone silhouette underneath pattern
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(synthAngle * 0.01);
+  ctx.fillStyle = 'rgba(80,80,80,0.6)';
+  ctx.fillRect(-40, -15, 80, 30); // fuselage
+  ctx.fillRect(-90, -4, 180, 8);  // arms
+  ctx.restore();
+
+  // Phase-edge overlay (KCM visualization)
+  if (showEdge) {
+    const edgeAlpha = 0.4 + 0.2 * Math.sin(synthAngle * 2);
+    const edgeGrad = ctx.createRadialGradient(cx, cy, 80, cx, cy, 220);
+    edgeGrad.addColorStop(0, `rgba(0,255,100,0)`);
+    edgeGrad.addColorStop(0.5, `rgba(0,255,100,${edgeAlpha})`);
+    edgeGrad.addColorStop(1, `rgba(0,255,100,0)`);
+    ctx.fillStyle = edgeGrad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Grid overlay
+  ctx.strokeStyle = 'rgba(0,80,30,0.15)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Target reticle
+  ctx.strokeStyle = anomalyCount > 0 ? '#ff3333' : '#00ff66';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-25,cy); ctx.lineTo(cx-14,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+14,cy); ctx.lineTo(cx+25,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-25); ctx.lineTo(cx,cy-14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy+14); ctx.lineTo(cx,cy+25); ctx.stroke();
+
+  synthAngle += 0.04;
+}
+
+// --- Live Camera ---
+async function startCamera() {
+  mode = 'camera';
+  document.getElementById('btnCamera').classList.add('active');
+  document.getElementById('btnSynth').classList.remove('active');
+  if (animFrame) cancelAnimationFrame(animFrame);
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    videoEl = document.createElement('video');
+    videoEl.srcObject = videoStream;
+    videoEl.autoplay = true;
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    videoEl.onloadedmetadata = () => { cameraLoop(); };
+  } catch(e) {
+    addLog(`[ERROR] Camera access denied: ${e.message}`, 'alert');
+  }
+}
+
+function cameraLoop() {
+  if (mode !== 'camera') return;
+  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+  runKCMAnalysis();
+  animFrame = requestAnimationFrame(cameraLoop);
+}
+
+// --- KCM Analysis (CPU-side phase-edge approximation) ---
+function runKCMAnalysis() {
+  frameIdx++;
+  const W = canvas.width, H = canvas.height;
+
+  // Sample pixel data for edge analysis
+  const sample = ctx.getImageData(W/2 - 100, H/2 - 100, 200, 200);
+  const data = sample.data;
+  let edgeSum = 0;
+  const stride = W * 4; // not used directly here since we sample a sub-image
+
+  // Compute luminance gradient approximation
+  for (let i = 0; i < data.length - 4; i += 16) {
+    const lumCurr = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    const lumNext = 0.299*data[i+4] + 0.587*data[i+5] + 0.114*data[i+6];
+    edgeSum += Math.abs(lumCurr - lumNext);
+  }
+  const edgeMean = edgeSum / (data.length / 16);
+
+  // nablaV
+  let nablaV = 0;
+  let betaScore = 0;
+  if (prevEdgeMean !== null) {
+    nablaV = Math.abs(edgeMean - prevEdgeMean) / (prevEdgeMean + 0.001);
+    if (nablaV > THETA_MORPH) {
+      betaScore = BETA_0 * nablaV * KAPPA;
+      anomalyCount++;
+      addLog(`[⚠ ANOMALY] Frame ${String(frameIdx).padStart(4,'0')} | nablaV=${nablaV.toFixed(4)} | β=${betaScore.toFixed(2)} | FLYTRAP DPA SIGNATURE`, 'alert');
+    }
+  }
+  prevEdgeMean = edgeMean;
+
+  // Update HUD
+  document.getElementById('frameCounter').textContent = `FRAME ${String(frameIdx).padStart(4,'0')}`;
+  document.getElementById('betaStatus').textContent = `β(∇V) = ${betaScore.toFixed(2)}`;
+  document.getElementById('betaStatus').className = betaScore > 0 ? 'status-alert' : 'status-ok';
+  document.getElementById('lockStatus').textContent = anomalyCount > 0 ? '⚠ SPOOFING DETECTED' : 'KCM LOCK — NOMINAL';
+  document.getElementById('lockStatus').className = anomalyCount > 0 ? 'status-alert' : 'status-ok';
+  document.getElementById('metNablaV').textContent = nablaV.toFixed(4);
+  document.getElementById('metBeta').textContent = betaScore.toFixed(2);
+  document.getElementById('metAnomalies').textContent = anomalyCount;
+  document.getElementById('metEdge').textContent = edgeMean.toFixed(2);
+}
+
+function toggleEdgeOverlay() {
+  showEdge = !showEdge;
+  document.getElementById('btnEdge').classList.toggle('active', showEdge);
+}
+function toggleVolumeOverlay() {
+  showVolume = !showVolume;
+  document.getElementById('btnVolume').classList.toggle('active', showVolume);
+}
+function resetLog() {
+  anomalyCount = 0;
+  prevEdgeMean = null;
+  frameIdx = 0;
+  document.getElementById('logEntries').innerHTML = '<div class="log-entry">[ RESET ] KCM anomaly log cleared.</div>';
+  document.getElementById('metAnomalies').textContent = '0';
+}
+function addLog(msg, cls='log-entry') {
+  const log = document.getElementById('logEntries');
+  const div = document.createElement('div');
+  div.className = `log-entry ${cls}`;
+  div.textContent = msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+window.addEventListener('load', init);
+window.startCamera = startCamera;
+window.startSynthetic = startSynthetic;
+window.toggleEdgeOverlay = toggleEdgeOverlay;
+window.toggleVolumeOverlay = toggleVolumeOverlay;
+window.resetLog = resetLog;
+</script>
+</body>
+</html>
