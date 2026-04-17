@@ -1,47 +1,67 @@
-/*
- * Copyright (c) 2026 Colby Fitch / SkyGuard Defense Systems.
- * Released under GPLv3. Commercial licenses available.
- */
+// otis_core.hpp — O.T.I.S. Top-Level Pipeline Header
+// SkyGuard Defense Systems / InSitu Labs
+// otis-core v0.1 — April 2026
+//
+// Includes all O.T.I.S. subsystem headers and defines the top-level
+// pipeline configuration. Include this header for full system access.
 
 #pragma once
 
+#include "kcm_math.hpp"
+#include <cstdint>
 #include <vector>
-#include <cmath>
-#include <iostream>
 
-namespace skyguard {
 namespace otis {
 
-    // 3D Vector representation for physics calculations
-    struct Vector3D {
-        double x, y, z;
-        double norm() const { return std::sqrt(x*x + y*y + z*z); }
-    };
+// ─────────────────────────────────────────────────────────────────────────────
+// Pipeline Configuration — matches MATH.md defaults
+// ─────────────────────────────────────────────────────────────────────────────
 
-    // Sensor state packet bypassing standard video decoders
-    struct SensorData {
-        double timestamp;
-        std::vector<double> density_matrix;
-        std::vector<Vector3D> velocity_vectors;
-        double volume_delta;
-    };
+struct OTISConfig {
+    // KCM weights
+    double alpha       = 1.0;     // Momentum continuity weight
+    double beta0       = 1.0;     // Volume penalty base
+    double gamma       = 1.0;     // Feature discard weight
+    double theta_morph = 0.10;    // Volumetric shift threshold (10%)
+    double kappa       = 1000.0;  // Penalty multiplier
 
-    class KCM_Engine {
-    public:
-        KCM_Engine(double alpha, double beta, double gamma);
-        
-        // Main Objective Function: minimize J(r_CG)
-        double calculate_rcg(const SensorData& data, const Vector3D& p_predict);
+    // Kalman predictor
+    double kalman_process_noise     = 0.01;
+    double kalman_measurement_noise = 0.1;
 
-    private:
-        double alpha_weight;
-        double beta_weight;
-        double gamma_weight;
+    // Bypass layer
+    bool   enable_exploit_scan     = true;
+    bool   enable_header_validation= true;
+    bool   enable_sanitization     = true;
+};
 
-        double process_momentum_vectors(const SensorData& data, const Vector3D& p_predict);
-        double apply_volume_penalty(double volume_delta);
-        void discard_optical_features();
-    };
+// ─────────────────────────────────────────────────────────────────────────────
+// KCM_Engine — Alias for top-level access (matches ARCHITECTURE.md)
+// ─────────────────────────────────────────────────────────────────────────────
+
+using KCM_Engine = KCMEngine;
 
 } // namespace otis
-} // namespace skyguard
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bypass Layer — Forward declarations
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace otis {
+namespace bypass {
+
+enum class BypassStatus : int;
+struct FrameMetadata;
+
+BypassStatus process_stream(
+    const uint8_t* raw_input,
+    size_t input_length,
+    FrameMetadata& meta,
+    uint8_t* clean_output,
+    size_t output_capacity,
+    size_t& bytes_written);
+
+void run_bypass_selftest();
+
+} // namespace bypass
+} // namespace otis
