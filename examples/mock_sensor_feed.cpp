@@ -1,31 +1,65 @@
+// mock_sensor_feed.cpp — FlyTrap DPA Spoofing Simulation
+// SkyGuard Defense Systems / InSitu Labs
+// otis-core v0.1 — April 2026
+
+#include "otis_core/kcm_math.hpp"
 #include "otis_core/otis_core.hpp"
 #include <iostream>
-
-using namespace skyguard::otis;
+#include <vector>
 
 int main() {
-    std::cout << "--- SKYGUARD O.T.I.S. KINETIC ENGINE ---" << std::endl;
-    std::cout << "Booting KCM Matrix..." << std::endl;
+    std::cout << "=================================================\n";
+    std::cout << " O.T.I.S. — Mock Sensor Feed (FlyTrap DPA Sim)\n";
+    std::cout << " SkyGuard Defense Systems — otis-core v0.1\n";
+    std::cout << "=================================================\n\n";
 
-    // Initialize engine with Alpha, Beta, Gamma weights
-    KCM_Engine engine(1.0, 0.85, 0.0); 
+    otis::KCMEngine engine(
+        1.0,     // alpha
+        1.0,     // beta0
+        1.0,     // gamma
+        0.10,    // theta_morph
+        1000.0   // kappa
+    );
 
-    // Simulate incoming target (Adversarial Drone)
-    SensorData target_data;
-    target_data.timestamp = 0.01;
-    target_data.velocity_vectors.push_back({15.5, 2.0, -1.0}); // Moving fast
-    target_data.density_matrix.push_back(5.5); // Solid mass
-    
-    // Simulate Flytrap morphological spoofing (rapid shape shift)
-    target_data.volume_delta = 0.45; 
+    otis::KalmanMomentumPredictor kalman(0.01, 0.1);
 
-    Vector3D predicted_momentum = {15.0, 2.0, -1.0};
+    std::vector<otis::TargetMass> segments = {
+        {{0.10, 0.00, 2.00}, 1.0, 0.05},
+        {{0.00, 0.10, 2.00}, 1.0, 0.05},
+        {{0.00, 0.00, 2.00}, 1.0, 0.05},
+        {{0.10, 0.10, 1.90}, 1.0, 0.05},
+    };
 
-    std::cout << "Tracking Target CG..." << std::endl;
-    double objective_result = engine.calculate_rcg(target_data, predicted_momentum);
+    otis::Vector3D P_predict = {0.0, 0.0, 2.0};
 
-    std::cout << "Target Lock Calculated. J(r_CG) = " << objective_result << std::endl;
-    std::cout << "Spoofing penalty applied. Optical illusions discarded." << std::endl;
+    std::cout << "--- Scenario 1: Normal Flight (3 frames) ---\n\n";
+    for (int i = 1; i <= 3; ++i) {
+        double nablaV = 0.02 + 0.01 * i;
+        std::vector<double> no_features = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        engine.process_frame(segments, P_predict, nablaV, no_features);
+        kalman.update(P_predict, 0.033);
+        P_predict = kalman.predict(0.033);
+    }
+
+    std::cout << "\n--- Scenario 2: FlyTrap DPA Attack (3 frames) ---\n\n";
+    for (int i = 1; i <= 3; ++i) {
+        double nablaV = 0.40 + 0.05 * i;
+        std::vector<double> adv_features = {0.88, 0.76, 0.93, 0.71, 0.82, 0.67};
+        engine.process_frame(segments, P_predict, nablaV, adv_features);
+        kalman.update(P_predict, 0.033);
+        P_predict = kalman.predict(0.033);
+    }
+
+    std::cout << "\n--- Session Summary ---\n";
+    std::cout << "  Total frames     : " << engine.get_frame_count()   << "\n";
+    std::cout << "  Anomalies flagged: " << engine.get_anomaly_count() << "\n";
+
+    if (engine.get_anomaly_count() > 0) {
+        std::cout << "\n[O.T.I.S.] PASS — FlyTrap DPA detected by beta(nablaV).\n";
+    } else {
+        std::cout << "\n[O.T.I.S.] FAIL — No anomalies detected.\n";
+        return 1;
+    }
 
     return 0;
 }
