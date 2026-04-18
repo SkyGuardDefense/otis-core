@@ -1,15 +1,32 @@
 name: Build otis-core
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install dependencies
-        run: sudo apt-get install -y cmake g++
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cmake g++ make
+
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
       - name: Build
-        run: cmake --build build
+        run: cmake --build build --parallel
+
+      - name: Run mock_sensor_feed
+        run: ./build/mock_sensor_feed
+
+      - name: Run mock_telemetry_feed
+        run: ./build/mock_telemetry_feed
