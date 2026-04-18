@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Install dependencies
         run: |
@@ -20,13 +20,33 @@ jobs:
           sudo apt-get install -y cmake g++ make
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Build
         run: cmake --build build --parallel
 
+      - name: Show build tree
+        run: find ./build -type f -name "*.a" -o -name "mock_*" | sort
+
       - name: Run mock_sensor_feed
-        run: ./build/mock_sensor_feed
+        run: |
+          if [ -f ./build/mock_sensor_feed ]; then
+            ./build/mock_sensor_feed
+          elif [ -f ./build/examples/mock_sensor_feed ]; then
+            ./build/examples/mock_sensor_feed
+          else
+            echo "mock_sensor_feed binary not found" && exit 1
+          fi
 
       - name: Run mock_telemetry_feed
-        run: ./build/mock_telemetry_feed
+        run: |
+          if [ -f ./build/mock_telemetry_feed ]; then
+            ./build/mock_telemetry_feed
+          elif [ -f ./build/examples/mock_telemetry_feed ]; then
+            ./build/examples/mock_telemetry_feed
+          else
+            echo "mock_telemetry_feed binary not found" && exit 1
+          fi
